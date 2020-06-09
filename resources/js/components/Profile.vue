@@ -1,9 +1,8 @@
 <template>
-    <p>Home</p>
+<p>Profile</p>
 </template>
 
 <script>
-export default {
-
-};
+    export default {
+    }
 </script>

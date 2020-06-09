@@ -1,8 +1,9 @@
 <template>
-<p>About</p>
+    <p>Dashboard</p>
 </template>
 
 <script>
-    export default {
-    }
+export default {
+
+};
 </script>
