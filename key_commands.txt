@@ -1,0 +1,144 @@
+
+To install new fresh project
+first step
+go to required dir then type this command
+laravel new project_name
+then to install vue type this
+composer require laravel/ui
+then type this 
+php artisan ui vue --auth    //--auth install auth pages like login reg home forgot pass
+then type install
+
+now if you want to install font awesome 
+type 
+npm install font-awesome --save
+then go to app.scss file and copy the below commands at the very top of the page
+@import '~@fortawesome/fontawesome-free/scss/brands';
+@import '~@fortawesome/fontawesome-free/scss/regular';
+@import '~@fortawesome/fontawesome-free/scss/solid';
+@import '~@fortawesome/fontawesome-free/scss/fontawesome';
+
+now go to webpack.mix.js file and attach this command 
+.copy('node_modules/font-awesome/fonts', 'public/fonts')
+
+now run this command
+npm run watch
+and that's all.
+
+--------------------------------------------------
+to make api controller for user in my case i am creating that api route for user creation
+php artisan make:controller API/UserController --api
+then you have to register it like this in api.php file
+Route::apiResources([
+    'user' => 'API\UserController',
+]);
+then if you will check like this 
+php artisan route:list
+you will now see the api ends with all the methods
+
+
+---------------------------------------------------------------------------
+to run custom migration
+php artisan migrate --path=/database/migrations/2020_04_16_145218_create_articles_table.php
+if you want to make a pivot table which have two primary ids and they are referring to the same unique id in other table
+make table like this
+    {
+        Schema::create('follows', function (Blueprint $table) {
+            $table->primary(['user_id','following_user_id']);
+            $table->foreignId('user_id');
+            $table->foreignId('following_user_id');
+            $table->timestamps();
+
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('following_user_id')->references('id')->on('users')->onDelete('cascade');
+        });
+    }
+
+above case is that one user have multiple follow or it can follow multiple people. So in User model:
+
+    public function follows()
+    {                                              
+        return $this->belongsToMany(User::class,'follows','user_id','following_user_id');
+    }
+
+*if base table error came then provide table name + first id(its a table column name) + second id(its a table column name). See above
+
+HasMany
+if you have a user table with id as a primary key
+and you have an other table called tweets and in that table all the tweets are placed
+so a single user has multiple tweets like we put user_id column in tweets table now we can write in User model
+as this way:
+
+public function tweets()
+{
+return $this->HasMany(Tweet::class)
+}
+
+the above scenario inverse will be HasOne which will come in Tweet model like this
+public function user()
+{
+return $this->HasOne(User::class);
+
+BelongsToMany ususally came in Pivot Tables mean to say intermediate table which become at a run time
+
+---------------------------------
+in making relation you have to put only latest() at the end to get latest object or data
+    public function tweets(){
+        return $this->hasMany(Tweet::class)->latest();
+    }
+
+but in query making to get latest like this
+
+    public function timeline()
+    {
+        $friends = $this->follows()->pluck('id');
+        
+        return Tweet::whereIn('user_id', $friends)->orWhere('user_id', $this->id)->latest()->get();
+    }
+you have to put latest()->get()
+
+-----------------------------------
+
+to get the time from created_at column field according to your timezone
+
+$tweet->created_at->timezone('Asia/Karachi')->toDayDateTimeString()}}
+
+--------------------------------------
+to add css conditionally in forms
+ @error('email') border-red-500 @enderror  //that is inside class use the built-in class that suits you like in bootstrap and tailwind
+to add the previous wrong value into the field on form submission
+value="{{old('email')}} //email is the name="email" tag
+----------------------------------------------------------------------
+
+How to use laravel passport - mean to say if you send a request with specific token you can get all the data from api basically we are using this
+only for the purpose to secure our api ends. You can also secure the api by creating a construct method and put middle auth security.
+
+Here we go
+first install the laravel passport:
+composer require laravel/passport
+then type this
+php artisan migrate
+then this
+php artisan passport:install
+then to get the vue scafolding of laravel passport components type this
+php artisan vendor:publish --tag=passport-components
+now its time for configuration with your app
+first go to user model and add a trait like this
+use Laravel\Passport\HasApiTokens;
+now below also add this
+class User extends Authenticatable
+{
+    use HasApiTokens, Notifiable;
+}
+now go to the auth service provider in providers dir and type add this "Passport::routes();" in the boot method like this
+    public function boot()
+    {
+        $this->registerPolicies();
+
+        Passport::routes();
+    }
+now finally go to your app auth.php file and set the api driver to passport like this
+    'api' => [
+        'driver' => 'passport',
+        'provider' => 'users',
+    ],
